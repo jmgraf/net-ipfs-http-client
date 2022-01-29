@@ -180,6 +180,31 @@ namespace Ipfs.Http
             }
         }
 
+        /// <summary>
+        ///   Reads the content of an existing IPFS file as text.
+        /// </summary>
+        /// <param name="path">
+        ///   A path to an existing file, such as "QmXarR6rgkQ2fDSHjSY5nM2kuCXKYGViky5nohtwgF65Ec/about"
+        ///   or "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V"
+        /// </param>
+        /// <param name="host">
+        ///   Set a host to override the base ApiUrl
+        /// </param>
+        /// <param name="cancel">
+        ///   Is used to stop the task.  When cancelled, the <see cref="TaskCanceledException"/> is raised.
+        /// </param>
+        /// <returns>
+        ///   The contents of the <paramref name="path"/> as a <see cref="string"/>.
+        /// </returns>
+        public async Task<String> ReadAllTextHostAsync(string path, string host, CancellationToken cancel = default(CancellationToken))
+        {
+            using (var data = await ReadFileHostAsync(path, host, cancel))
+            using (var text = new StreamReader(data))
+            {
+                return await text.ReadToEndAsync();
+            }
+        }
+
 
         /// <summary>
         ///   Opens an existing IPFS file for reading.
@@ -196,8 +221,31 @@ namespace Ipfs.Http
         /// </returns>
         public Task<Stream> ReadFileAsync(string path, CancellationToken cancel = default(CancellationToken))
         {
-            return ipfs.DownloadAsync("cat", cancel, path);
+            return ipfs.PostDownloadAsync("cat", cancel, path);
         }
+
+        /// <summary>
+        ///   Opens an existing IPFS file for reading.
+        /// </summary>
+        /// <param name="path">
+        ///   A path to an existing file, such as "QmXarR6rgkQ2fDSHjSY5nM2kuCXKYGViky5nohtwgF65Ec/about"
+        ///   or "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V"
+        /// </param>
+        /// <param name="host">
+        ///   Set a host to override the base ApiUrl
+        /// </param>
+        /// <param name="cancel">
+        ///   Is used to stop the task.  When cancelled, the <see cref="TaskCanceledException"/> is raised.
+        /// </param>
+        /// <returns>
+        ///   A <see cref="Stream"/> to the file contents.
+        /// </returns>
+        public Task<Stream> ReadFileHostAsync(string path, string host, CancellationToken cancel = default(CancellationToken))
+        {
+            return ipfs.PostDownloadCustomHostAsync("cat", host, cancel, path);
+        }
+
+
 
         public Task<Stream> ReadFileAsync(string path, long offset, long length = 0, CancellationToken cancel = default(CancellationToken))
         {
@@ -209,9 +257,10 @@ namespace Ipfs.Http
 
             if (length == 0)
                 length = int.MaxValue; // go-ipfs only accepts int lengths
-            return ipfs.DownloadAsync("cat", cancel, path, 
+            return ipfs.PostDownloadAsync("cat", cancel, path,
                 $"offset={offset}",
                 $"length={length}");
+
         }
 
         /// <summary>
@@ -257,7 +306,7 @@ namespace Ipfs.Http
 
         public Task<Stream> GetAsync(string path, bool compress = false, CancellationToken cancel = default(CancellationToken))
         {
-            return ipfs.DownloadAsync("get", cancel, path, $"compress={compress}");
+            return ipfs.PostDownloadAsync("get", cancel, path, $"compress={compress}");
         }
     }
 }
